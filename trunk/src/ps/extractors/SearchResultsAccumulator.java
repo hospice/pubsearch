@@ -5,6 +5,9 @@ import java.util.List;
 
 import ps.struct.PublicationInfo;
 
+/**
+ * Provides search accumulation functionality.
+ */
 public class SearchResultsAccumulator {
 
 	
