@@ -9,7 +9,6 @@ import org.htmlparser.util.ParserException;
 import ps.extractors.ArnetMinerExtractor;
 import ps.extractors.GoogleScholarExtractor;
 import ps.extractors.MicrosoftAcademicSearchExtractor;
-import ps.struct.AcmTopic;
 import ps.struct.PublicationInfo;
 import ps.util.CrawlUtils;
 import ps.util.IOUtils;
@@ -20,6 +19,7 @@ public class Tester {
 	public static final int DELAY_IN_SECS = 5;
 
 	public static void main(String[] args) throws Exception {
+		// System.out.println("Now performing... processAllQueries():");
 		processAllQueries();
 	}
 
@@ -30,9 +30,28 @@ public class Tester {
 	 */
 	private static void processAllQueries() throws Exception {
 		List<String> qList = getQueryList();
+		int id = 6000;
+		int queryId = 1124;
 		for (String query : qList) {
-			processForQuery(query);
+			List<PublicationInfo> mergedList = processForQuery(query);
+			printPublicationInfoSql(id, queryId, mergedList);
+			id++;
+			queryId++;
 		}
+	}
+
+	private static List<PublicationInfo> processForQuery(String query) throws Exception {
+		// 1. ARNETMINER:
+		String amHtml = fetchHtmlForQuery(query, SearchEngineEnum.ARNETMINER);
+		List<PublicationInfo> amResults = ArnetMinerExtractor.extractPublicationResults2(amHtml);
+		// 2. GOOGLE SCHOLAR:
+		String gsHtml = fetchHtmlForQuery(query, SearchEngineEnum.GOOGLE_SCHOLAR);
+		List<PublicationInfo> gsResults = GoogleScholarExtractor.extractPublicationResults2(gsHtml);
+		// 3. MISCROSOFT ACADEMIC SEARCH:
+		String msHtml = fetchHtmlForQuery(query, SearchEngineEnum.MISCROSOFT_ACADEMIC_SEARCH);
+		List<PublicationInfo> msResults = MicrosoftAcademicSearchExtractor.extractPublicationResults2(msHtml);
+		List<PublicationInfo> mergedList = mergeList(amResults, gsResults, msResults);
+		return mergedList;
 	}
 
 	/**
@@ -40,29 +59,37 @@ public class Tester {
 	 * 
 	 * @throws Exception
 	 */
-	private static void processForQuery(String query) throws Exception {
-		// 1. ARNETMINER:
-		String amHtml = fetchHtmlForQuery(query, SearchEngineEnum.ARNETMINER);
-		List<PublicationInfo> amResults = ArnetMinerExtractor.extractPublicationResults2(amHtml);
-		printPublicationInfo(amResults);
-		System.out.println();
-		System.out.println("*******************************");
-		System.out.println();
-		// 2. GOOGLE SCHOLAR:
-		String gsHtml = fetchHtmlForQuery(query, SearchEngineEnum.GOOGLE_SCHOLAR);
-		List<PublicationInfo> gsResults = GoogleScholarExtractor.extractPublicationResults2(gsHtml);
-		printPublicationInfo(gsResults);
-		System.out.println();
-		System.out.println("*******************************");
-		System.out.println();
-		// 3. MISCROSOFT ACADEMIC SEARCH:
-		String msHtml = fetchHtmlForQuery(query, SearchEngineEnum.MISCROSOFT_ACADEMIC_SEARCH);
-		List<PublicationInfo> msResults = MicrosoftAcademicSearchExtractor.extractPublicationResults2(msHtml);
-		printPublicationInfo(msResults);
-		System.out.println();
-		System.out.println("*******************************");
-		System.out.println();
-	}
+	// private static List<PublicationInfo> processForQuery(String query) throws Exception {
+	// // 1. ARNETMINER:
+	// String amHtml = fetchHtmlForQuery(query, SearchEngineEnum.ARNETMINER);
+	// List<PublicationInfo> amResults = ArnetMinerExtractor.extractPublicationResults2(amHtml);
+	// // printPublicationInfo(amResults);
+	// // System.out.println();
+	// // System.out.println("*******************************");
+	// // System.out.println();
+	//
+	// // 2. GOOGLE SCHOLAR:
+	// String gsHtml = fetchHtmlForQuery(query, SearchEngineEnum.GOOGLE_SCHOLAR);
+	// List<PublicationInfo> gsResults = GoogleScholarExtractor.extractPublicationResults2(gsHtml);
+	// // printPublicationInfo(gsResults);
+	// // System.out.println();
+	// // System.out.println("*******************************");
+	// // System.out.println();
+	//
+	// // 3. MISCROSOFT ACADEMIC SEARCH:
+	// String msHtml = fetchHtmlForQuery(query, SearchEngineEnum.MISCROSOFT_ACADEMIC_SEARCH);
+	// List<PublicationInfo> msResults = MicrosoftAcademicSearchExtractor.extractPublicationResults2(msHtml);
+	// // printPublicationInfo(msResults);
+	// // System.out.println();
+	// // System.out.println("*******************************");
+	// // System.out.println();
+	//
+	// List<PublicationInfo> mergedList = mergeList(amResults, gsResults, msResults);
+	//		
+	// // printPublicationInfo(mergedList);
+	// // System.out.println();
+	// return mergedList;
+	// }
 
 	private static void writeHtmlToFileForAllQueries() throws ParserException, InterruptedException {
 		List<String> qList = getQueryList();
@@ -115,9 +142,19 @@ public class Tester {
 		return qList;
 	}
 
-	private static void printPublicationInfo(List<PublicationInfo> publicationInfo) {
+	// private static void printPublicationInfo(List<PublicationInfo> publicationInfo) {
+	// for (PublicationInfo p : publicationInfo) {
+	// printPublicationInfo(p);
+	// }
+	// }
+
+	private static void printPublicationInfoSql(int id, int queryId, List<PublicationInfo> publicationInfo) {
+		int rank = 1;
 		for (PublicationInfo p : publicationInfo) {
-			printPublicationInfo(p);
+			String stm = createInsertStatement(id, queryId, p, rank);
+			System.out.println(stm);
+			id++;
+			rank++;
 		}
 	}
 
@@ -134,6 +171,58 @@ public class Tester {
 			System.out.println(" -> " + author);
 		}
 		System.out.println("NUMBER OF CITATIONS: " + publicationInfo.getNumOfCitations());
+	}
+
+	private static String createInsertStatement(int id, int queryId, PublicationInfo pi, int rank) {
+		String url = pi.getUrl();
+		String title = pi.getTitle();
+		Integer cit = pi.getNumOfCitations();
+		List<String> authList = pi.getAuthors();
+		String auths = "";
+		int i = 0;
+		int limit = 3;
+		if (authList != null && authList.size() > 0) {
+			for (String a : authList) {
+				if (i < limit) {
+					auths += a;
+					if (i < limit - 2) {
+						auths += ",";
+					}
+					i++;
+				}
+
+			}
+		}
+		Integer year = pi.getYearOfPublication();
+		String stmt = "insert into query_results values(" + id + ", " + queryId + ", '" + url + "', '" + title
+				+ "', '', " + rank + ", NULL, " + cit + ", '" + auths + "', " + year + ", 1, '');";
+		return stmt;
+	}
+
+	private static List<PublicationInfo> mergeList(List<PublicationInfo> l1, List<PublicationInfo> l2,
+			List<PublicationInfo> l3) {
+		List<PublicationInfo> mergedList = new ArrayList<PublicationInfo>();
+		addListToMerged(l1, mergedList);
+		addListToMerged(l2, mergedList);
+		addListToMerged(l3, mergedList);
+		return mergedList;
+	}
+
+	private static List<PublicationInfo> addListToMerged(List<PublicationInfo> l, List<PublicationInfo> mergedList) {
+		for (PublicationInfo p : l) {
+			boolean contains = false;
+			String title = p.getTitle();
+			for (PublicationInfo pm : mergedList) {
+				if (title.equalsIgnoreCase(pm.getTitle())) {
+					contains = true;
+					break;
+				}
+			}
+			if (!contains) {
+				mergedList.add(p);
+			}
+		}
+		return mergedList;
 	}
 
 }

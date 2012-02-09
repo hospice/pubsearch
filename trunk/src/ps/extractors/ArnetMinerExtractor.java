@@ -139,7 +139,7 @@ public class ArnetMinerExtractor {
 			to = html.indexOf(ExtrConstants.MS_RES_END, from);
 			String s = html.substring(from, to);
 			Integer year = Integer.parseInt(s.trim());
-			p = new PublicationInfo(title, url, authors, year);
+			p = new PublicationInfo(title, "http://www.arnetminer.org/" + url, authors, year);
 		}
 		return p;
 	}
