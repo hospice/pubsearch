@@ -6,6 +6,7 @@ import java.util.List;
 import ps.struct.PublicationInfo;
 import ps.util.CrawlUtils;
 import ps.util.IOUtils;
+import ps.util.PrintUtils;
 import ps.util.StringUtils;
 
 /**
@@ -14,12 +15,25 @@ import ps.util.StringUtils;
 public class GoogleScholarExtractor {
 
 	public static void main(String[] args) throws Exception {
-		String pathname = "C:/gs_test.html";
-		String html = IOUtils.readFileFromPath(pathname);
-		String title = "Web Information Retrieval";
-		String author = "Lewandowski";
-		String specificHtml = identifySpecificResHtml(html, title, author);
-		System.out.println(specificHtml);
+		String pathname = "";
+		List<String> qList = getQueryList();
+		for (String q : qList) {
+			pathname = "C:\\_tmp\\new\\gs\\" + q.replaceAll("\"", "");
+			String html = IOUtils.readFileFromPath(pathname);
+			List<PublicationInfo> pList = extractPublicationResults2(html);
+			PrintUtils.printPublicationInfo(pList);
+			System.out.println("***********************");
+		}
+	}
+
+	private static List<String> getQueryList() {
+		List<String> qList = new ArrayList<String>();
+		qList.add("\"page rank\" clustering");
+		qList.add("\"social network\" \"information retrieval\"");
+		qList.add("\"unsupervised learning\"");
+		qList.add("clustering \"information retrieval\"");
+		qList.add("\"web mining\"");
+		return qList;
 	}
 
 	/**
@@ -68,6 +82,72 @@ public class GoogleScholarExtractor {
 					if (resultEnd > -1) {
 						String title = StringUtils.stripTextFromHtml(section.substring(resultStart, resultEnd));
 						PublicationInfo p = new PublicationInfo(title, url, citations, year, section);
+						results.add(p);
+					} else {
+						throw new Exception("END OF RESULTS NOT FOUND!");
+					}
+
+					html = html.substring(end);
+					i++;
+				} else {
+					throw new Exception("BEGINNING OF RESULTS NOT FOUND!");
+				}
+			}
+		} else {
+			throw new Exception("NO RESULTS SECTION FOUND IN HTML!");
+		}
+		return results;
+	}
+	
+	public static List<PublicationInfo> extractPublicationResults2(String html) throws Exception {
+		List<PublicationInfo> results = new ArrayList<PublicationInfo>();
+		int from = html.indexOf(ExtrConstants.GS_RES_SECTION);
+		if (from > -1) {
+			int i = 0;
+			while (i < ExtrConstants.GS_TOTAL_RES_PER_PAGE) {
+				String section = "";
+				int beg = html.indexOf(ExtrConstants.GS_RES_BEG);
+				int end = 0;
+				if (beg > -1) {
+					beg = beg + ExtrConstants.GS_RES_BEG.length();
+					end = html.indexOf(ExtrConstants.GS_RES_END, beg);
+					if (end > -1) {
+						section = html.substring(beg, end);
+					} else {
+						if (i == ExtrConstants.GS_TOTAL_RES_PER_PAGE - 1) {
+							end = html.indexOf(ExtrConstants.GS_RES_PAGE_END, beg);
+							section = html.substring(beg, end);
+						} else {
+							throw new Exception("ENDING OF RESULT NOT FOUND!");
+						}
+					}
+				} else {
+					throw new Exception("BEGINNING OF RESULT NOT FOUND!");
+				}
+				String url = extractUrlFromContent(section);
+				Integer year = extractYearOfPublicationFromContent(section);
+				Integer citations = extractNumOfCitationsFromContent(section);
+				//String resStart = ExtrConstants.GS_RES_TITLE_BEG_PREF + i + ExtrConstants.GS_RES_TITLE_BEG_SUFF;
+				//int titleFrom= section.indexOf(">");
+				int resultStart = section.indexOf(">");//section.indexOf(titleFrom);
+				if (resultStart > -1) {
+					resultStart = resultStart + 1;//resStart.length();
+					int resultEnd = section.indexOf(ExtrConstants.A_HREF_END, resultStart);
+					if (resultEnd > -1) {
+						String title = StringUtils.stripTextFromHtml(section.substring(resultStart, resultEnd));
+						List<String> authors = new ArrayList<String>();
+						//authors
+						String authStart = "<div class=gs_a";
+						int authBeg = section.indexOf(authStart);
+						if(authBeg > -1){
+							authBeg += authStart.length();
+							int authEnd = section.indexOf("</div>", authBeg);
+							String authSection = section.substring(authBeg, authEnd);
+							authors = extractAuthorsFromAuthSection(authSection);
+						}
+						
+						PublicationInfo p = new PublicationInfo(title, url, citations, year, section);
+						p.setAuthors(authors);
 						results.add(p);
 					} else {
 						throw new Exception("END OF RESULTS NOT FOUND!");
@@ -308,6 +388,22 @@ public class GoogleScholarExtractor {
 		String lastName = firstAuth.split(" ")[1];
 		lastName = StringUtils.stripTextFromNonChars(lastName);
 		return lastName;
+	}
+	
+	private static List<String> extractAuthorsFromAuthSection(String authSection) {
+		String txt = new String(authSection);
+		int endPoint = txt.indexOf("&hellip;");
+		if (endPoint > -1) {
+			txt = txt.substring(0, endPoint);
+		}
+		txt = txt.replaceAll("</a>", "");
+		txt = StringUtils.removeContentBetweenDelimiters(txt, "<a", ">");
+		String[] authArr = txt.split(",");
+		List<String> l = new ArrayList<String>();
+		for (String a : authArr) {
+			l.add(StringUtils.stripTextFromHtml(a.trim()));
+		}
+		return l;
 	}
 
 }

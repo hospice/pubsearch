@@ -5,31 +5,53 @@ import java.util.List;
 
 import ps.struct.PublicationInfo;
 import ps.util.IOUtils;
-import ps.util.IOUtils;
+import ps.util.PrintUtils;
 
 public class ArnetMinerExtractor {
 
 	public static void main(String[] args) throws Exception {
-
-		String query = "information retrieval";
-
-		// 1. QUERY CONSTRUCTION:
-		// ----------------------
-		// System.out.println(constructQuery(query));
-
-		// // 2. HTML PARSING:
-		// // ----------------
-		List<PublicationInfo> res = extractPublicationResults(query);
-		for (PublicationInfo p : res) {
-			System.out.println("[TITLE]: " + p.getTitle());
-			System.out.println("[AUTHORS]: ");
-			List<String> authors = p.getAuthors();
-			for (String auth : authors) {
-				System.out.println("  => " + auth);
-			}
-			System.out.println("[YEAR]: " + p.getYearOfPublication());
-			System.out.println("------------ \n");
+		String pathname = "";
+		List<String> qList = getQueryList();
+		for (String q : qList) {
+			pathname = "C:\\_tmp\\new\\am\\" + q.replaceAll("\"", "");
+			String html = IOUtils.readFileFromPath(pathname);
+			List<PublicationInfo> pList = extractPublicationResults2(html);
+			PrintUtils.printPublicationInfo(pList);
 		}
+	}
+	
+	private static List<String> getQueryList() {
+		List<String> qList = new ArrayList<String>();
+		qList.add("\"page rank\" clustering");
+		qList.add("\"social network\" \"information retrieval\"");
+		qList.add("\"unsupervised learning\"");
+		qList.add("clustering \"information retrieval\"");
+		qList.add("\"web mining\"");
+		return qList;
+	}
+	
+	public static List<PublicationInfo> extractPublicationResults2(String html) throws Exception {
+		List<PublicationInfo> results = new ArrayList<PublicationInfo>();
+		int i = 0;
+		boolean hasMoreRes = true;
+		while (hasMoreRes) {
+			int from = html.indexOf(ExtrConstants.ARN_RES_ITEM);
+			if (from > -1) {
+				int to = html.indexOf(ExtrConstants.CLOSE_DIV, from);
+				if (to > -1) {
+					String resSection = html.substring(from, to);
+					html = html.substring(to);
+					results.add(fillPublicationInfo(resSection));
+				} else {
+					hasMoreRes = false;
+					break;
+				}
+			} else {
+				hasMoreRes = false;
+				break;
+			}
+		}
+		return results;
 	}
 
 	public static List<PublicationInfo> extractPublicationResults(String query) throws Exception {
@@ -88,13 +110,13 @@ public class ArnetMinerExtractor {
 			}
 			// AUTHORS
 			String authorsSectionBeg = ExtrConstants.ARN_AUTH_SECT_START;
-			String yearStart = ExtrConstants.ARN_PUBLISH_YEAR;
 			List<String> authors = new ArrayList<String>();
 			from = html.indexOf(authorsSectionBeg);
 			if(from > -1){
 				from += authorsSectionBeg.length();
-				to = html.indexOf(yearStart) + yearStart.length();
+				to = html.indexOf(ExtrConstants.ARN_PUBLISH_YEAR);
 				if(to > -1){
+					to += ExtrConstants.ARN_PUBLISH_YEAR.length();
 					String authorsHtml = html.substring(from, to);
 					boolean hasMoreAuths = true;
 					while (hasMoreAuths) {
@@ -115,7 +137,8 @@ public class ArnetMinerExtractor {
 			// YEAR
 			from = to;
 			to = html.indexOf(ExtrConstants.MS_RES_END, from);
-			Integer year = Integer.parseInt(html.substring(from, to).trim());
+			String s = html.substring(from, to);
+			Integer year = Integer.parseInt(s.trim());
 			p = new PublicationInfo(title, url, authors, year);
 		}
 		return p;
