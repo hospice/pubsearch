@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import org.htmlparser.Parser;
+import org.htmlparser.http.ConnectionManager;
 import org.htmlparser.util.ParserException;
 
 import ps.constants.GeneralConstants;
@@ -19,7 +20,35 @@ import ps.struct.PublicationInfo;
  * Provides crawling functionality.
  */
 public class CrawlUtils {
+	
+	private final static String PROXY_HOST = "wsa.central.nbg.gr";
+	private final static String PROXY_USER = "bank\\e74269";
+	private final static String PROXY_PASS = "o2lyqmd8+";
+	private final static int PROXY_PORT = 8080;
 
+	public static void main(String[] args) throws ParserException {
+		String url = "http://scholar.google.com";
+		String html = fetchHtmlCodeForUrlWithProxy(url);
+		System.out.println(html);
+	}
+	
+	public static String fetchHtmlCodeForUrlWithProxy(String url) throws ParserException{
+		String html = "";
+		ConnectionManager cm = Parser.getConnectionManager();
+		cm.setProxyHost(PROXY_HOST);
+		cm.setProxyUser(PROXY_USER);
+		cm.setProxyPassword(PROXY_PASS);
+		cm.setProxyPort(PROXY_PORT);
+		try {
+			new URL(url);
+			Parser parser = new Parser(url);
+			return parser.parse(null).toHtml();
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		}
+		return html;
+	}
+	
 	/**
 	 * Fetches the HTML code for specific URL.
 	 */
