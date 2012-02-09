@@ -5,6 +5,8 @@ import java.util.List;
 
 import ps.struct.PublicationInfo;
 import ps.util.CrawlUtils;
+import ps.util.IOUtils;
+import ps.util.PrintUtils;
 import ps.util.StringUtils;
 
 /**
@@ -15,6 +17,27 @@ import ps.util.StringUtils;
  */
 public class MicrosoftAcademicSearchExtractor {
 
+	public static void main(String[] args) throws Exception {
+		String pathname = "";
+		List<String> qList = getQueryList();
+		for (String q : qList) {
+			pathname = "C:\\_tmp\\new\\ms\\" + q.replaceAll("\"", "");
+			String html = IOUtils.readFileFromPath(pathname);
+			List<PublicationInfo> pList = extractPublicationResults2(html);
+			PrintUtils.printPublicationInfo(pList);
+			System.out.println("***********************");
+		}
+	}
+	
+	private static List<String> getQueryList() {
+		List<String> qList = new ArrayList<String>();
+		qList.add("\"page rank\" clustering");
+		qList.add("\"social network\" \"information retrieval\"");
+		qList.add("\"unsupervised learning\"");
+		qList.add("clustering \"information retrieval\"");
+		qList.add("\"web mining\"");
+		return qList;
+	}
 	/**
 	 * Extracts all publication results' related information from the HTML of the results page.
 	 */
@@ -33,6 +56,32 @@ public class MicrosoftAcademicSearchExtractor {
 				String url = extractURL(section);
 				PublicationInfo p = new PublicationInfo(title, url, extractAuthors(html));
 				GoogleScholarExtractor.updatePublicationCitationsAndDate(p);
+				results.add(p);
+				html = html.substring(to, html.length());
+				from = html.indexOf(ExtrConstants.MS_RES_BEG);
+				hasNext = from > -1;
+			}
+		}
+		return results;
+	}
+	
+	/**
+	 * Extracts all publication results' related information from the HTML of the results page.
+	 */
+	public static List<PublicationInfo> extractPublicationResults2(String html) throws Exception {
+		List<PublicationInfo> results = new ArrayList<PublicationInfo>();
+		int from = html.indexOf(ExtrConstants.MS_RES_BEG);
+		boolean hasNext = from > -1;
+		if (hasNext) {
+			int to = from;
+			while (hasNext) {
+				to = html.indexOf(ExtrConstants.MS_RES_END, from);
+				// fetches the current result section
+				String section = html.substring(from, to);
+				String title = extractTitle(section);
+				String url = extractURL(section);
+				PublicationInfo p = new PublicationInfo(title, url, extractAuthors(html));
+				//GoogleScholarExtractor.updatePublicationCitationsAndDate(p);
 				results.add(p);
 				html = html.substring(to, html.length());
 				from = html.indexOf(ExtrConstants.MS_RES_BEG);
@@ -88,7 +137,7 @@ public class MicrosoftAcademicSearchExtractor {
 	/**
 	 * Constructs the query to be submitted to Microsoft Academic Search.
 	 */
-	private static String constructQuery(String orgQuery) {
+	public static String constructQuery(String orgQuery) {
 		return ExtrConstants.MS_QUERY_PREF + new String(orgQuery).replaceAll(" ", ExtrConstants.URL_ENC_SPACE);
 	}
 
