@@ -12,6 +12,7 @@ import ps.struct.AcmResult;
 import ps.struct.Graph;
 import ps.struct.Link;
 import ps.struct.PublicationData;
+import ps.struct.PublicationInfo;
 
 /**
  * Provides print-related utilities.
@@ -22,24 +23,24 @@ public class PrintUtils {
 	 * Prints all publication data.
 	 */
 	public static void printPublicationData(PublicationData pd) {
-		
+
 		System.out.println("PRINTING DATA FOR PUBLICATION WITH TITLE = " + pd.getTitle());
-		
+
 		System.out.println("ABSTRACT");
 		System.out.println("***************************");
 		System.out.println(pd.getAbstractText());
 		System.out.println("\n\n\n");
-		
-//		System.out.println("KEYWORDS");
-//		System.out.println("***************************");
-//		String[] keywords = pd.getKeywordsArr();
-//		for (int i = 0; i < keywords.length; i++) {
-//			System.out.print(keywords[i]);
-//			if (i < keywords.length - 1) {
-//				System.out.print(", ");
-//			}
-//		}
-//		System.out.println("\n\n\n");
+
+		// System.out.println("KEYWORDS");
+		// System.out.println("***************************");
+		// String[] keywords = pd.getKeywordsArr();
+		// for (int i = 0; i < keywords.length; i++) {
+		// System.out.print(keywords[i]);
+		// if (i < keywords.length - 1) {
+		// System.out.print(", ");
+		// }
+		// }
+		// System.out.println("\n\n\n");
 
 		System.out.println("BODY");
 		System.out.println("***************************");
@@ -232,6 +233,31 @@ public class PrintUtils {
 			}
 			System.out.println("------------------");
 		}
+	}
+
+	/**
+	 * Prints all publication information details for all publications
+	 */
+	public static void printPublicationInfo(List<PublicationInfo> publicationInfo) {
+		for (PublicationInfo p : publicationInfo) {
+			printPublicationInfo(p);
+		}
+	}
+
+	/**
+	 * Prints all publication information details
+	 */
+	public static void printPublicationInfo(PublicationInfo publicationInfo) {
+		System.out.println("-------------------------------------------------------------------------");
+		System.out.println("TITLE: " + publicationInfo.getTitle());
+		System.out.println("URL: " + publicationInfo.getUrl());
+		if (publicationInfo.getAuthors().size() > 0) {
+			System.out.println("AUTHORS: ");
+			for (String author : publicationInfo.getAuthors()) {
+				System.out.println(" -> " + author);
+			}
+		}
+		System.out.println("NUMBER OF CITATIONS: " + publicationInfo.getNumOfCitations());
 	}
 
 }

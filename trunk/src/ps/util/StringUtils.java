@@ -19,51 +19,10 @@ import ps.constants.NameConstants;
 public class StringUtils {
 
 	public static void main(String[] args) {
-
-//		// TEST 1
-//		System.out.println("---------------- [ TEST 1 ] -------------------");
-//		String s = "AJScJSJS";
-//		boolean flag = isAllUpper(s);
-//		System.out.println("FOR STRING: '" + s + "', IS ALL UPPER? " + flag);
-//		System.out.println();
-//
-//		// TEST 2
-//		System.out.println("---------------- [ TEST 2 ] -------------------");
-//		String sentence = "AAAA thiss BBBB skdskds DcDDD CCCC";
-//		List<String> upperTokensList = extractAllUpperToken(sentence);
-//		for (String t : upperTokensList) {
-//			System.out.println(t);
-//		}
-//		System.out.println();
-		
-//		// TEST 3
-//		List<String> oldList = new ArrayList<String>();
-//		oldList.add("AAA");
-//		oldList.add("BBB");
-//		oldList.add("CCC");
-//		
-//		List<String> newList = new ArrayList<String>();
-//		newList.add("DDD");
-//		newList.add("EEE");
-//		newList.add("FFF");
-//		
-//		oldList.addAll(newList);
-//		
-//		for(String s : oldList){
-//			System.out.println(s);
-//		}
-		
-//		String sentence = "This is this. That is that.";
-//		
-//		String[] sentenceTokens = sentence.split("\\.");
-//		for (int i = 0; i < sentenceTokens.length; i++) {
-//			System.out.println(sentenceTokens[i]);			
-//		}
-		
-		String text = "AAA this blah. Etc this blah AAA, AAA, AAA.";
-		String tok = "AAA";
-		System.out.println(countOccur(text, tok));
-		
+		String txt = "><a href=\"/citations?hl=en&amp;user=fQh9kkoAAAAJ&amp;oi=sra\">" +
+				"J Baumes, M Goldberg, <a href=\"/citations?hl=en&amp;user=3XYmsKQAAAAJ&amp;oi=sra\">M Krishnamoorthy";
+		txt = StringUtils.removeContentBetweenDelimiters(txt, "<a", ">");
+		System.out.println(txt);
 	}
 
 	/**
@@ -158,7 +117,7 @@ public class StringUtils {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Checks if the specified array of tokens contains the specified term.
 	 */
@@ -332,7 +291,7 @@ public class StringUtils {
 	public static String removeContentBetweenDelimiters(String s, String openChar, String closeChar) {
 		int beg = s.indexOf(openChar);
 		while (beg > -1) {
-			int parenEnd = s.indexOf(closeChar) + 1;
+			int parenEnd = s.indexOf(closeChar, beg) + 1;
 			String clean1 = s.substring(0, beg);
 			String clean2 = s.substring(parenEnd, s.length());
 			s = clean1 + clean2;
@@ -340,7 +299,7 @@ public class StringUtils {
 		}
 		return s.trim();
 	}
-	
+
 	/**
 	 * Returns a list of all tokens of the provided sentence that contain only upper-cased characters.
 	 */
@@ -366,7 +325,6 @@ public class StringUtils {
 		}
 		return true;
 	}
-	
 
 	/**
 	 * Escapes all apostrophe(') characters.
@@ -387,13 +345,15 @@ public class StringUtils {
 		}
 		return escaped;
 	}
-	
+
 	/**
 	 * Counts the number of occurrences of the specified token in the specified text snippet.
 	 * 
-	 * @param snippet,	the text snippet to examine
-	 * @param token,	the token whose occurrences we need to calculate
-	 * @return			the total number of occurrences
+	 * @param snippet
+	 *            , the text snippet to examine
+	 * @param token
+	 *            , the token whose occurrences we need to calculate
+	 * @return the total number of occurrences
 	 */
 	public static int countOccur(String snippet, String token) {
 		String s = new String(snippet);
@@ -406,5 +366,5 @@ public class StringUtils {
 		}
 		return n;
 	}
-	
+
 }
