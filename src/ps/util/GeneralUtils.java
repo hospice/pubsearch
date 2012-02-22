@@ -9,7 +9,7 @@ import ps.struct.PublicationData;
 public class GeneralUtils {
 	
 	public PublicationData fillPublicationData(String query, String pubTitle, String publicationText) throws Exception {
-		if(PropertiesUtils.useStemming()){
+		if(PropertyUtils.useStemming()){
 			query = StemUtil.getEnglishStem(query); 
 			pubTitle = StemUtil.getEnglishStem(pubTitle);
 			publicationText = StemUtil.getEnglishStem(publicationText);

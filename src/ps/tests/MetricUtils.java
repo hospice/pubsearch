@@ -27,7 +27,11 @@ public class MetricUtils {
 		System.out.println("NDCG = " + ndcgScore);
 	}
 
-	public static double lex(Double[] ranking) {
+	public static double lex(Double[] orgRanking) {
+		Double[] ranking = new Double[orgRanking.length];
+		for(int i = 0 ; i < orgRanking.length ; i++){
+			ranking[i] = orgRanking[i]; 
+		}
 		double feedbackScore = 0;
 		for (int i = 9; i >= 0; i--) {
 			int idx = 9 - i;
@@ -77,7 +81,11 @@ public class MetricUtils {
 	 *            the ranking evaluation
 	 * @return the NDCG score for the ranking
 	 */
-	public static double ndcg(Double[] ranking) {
+	public static double ndcg(Double[] orgRanking) {
+		Double[] ranking = new Double[orgRanking.length];
+		for(int i = 0 ; i < orgRanking.length ; i++){
+			ranking[i] = orgRanking[i]; 
+		}
 		return dcg(ranking) / dcg(reverseSortDesc(ranking));
 	}
 
@@ -106,7 +114,11 @@ public class MetricUtils {
 	 *            the ranking evaluation
 	 * @return the ERR score
 	 */
-	public static double err(Double[] ranking) {
+	public static double err(Double[] orgRanking) {
+		Double[] ranking = new Double[orgRanking.length];
+		for(int i = 0 ; i < orgRanking.length ; i++){
+			ranking[i] = orgRanking[i]; 
+		}
 		double p = 1;
 		double errScore = 0;
 		int n = ranking.length;

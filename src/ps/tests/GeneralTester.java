@@ -2,7 +2,7 @@ package ps.tests;
 
 import ps.app2.PdfExtractor;
 import ps.util.PdfUtils;
-import ps.util.PropertiesUtils;
+import ps.util.PropertyUtils;
 
 public class GeneralTester {
 
@@ -22,13 +22,13 @@ public class GeneralTester {
 	
 	/** tests property reading */
 	private static void testPropertyReader(){
-		String path = PropertiesUtils.readPdfRootPath();
+		String path = PropertyUtils.readPdfRootPath();
 		System.out.println("path="+path);
 	}
 	
 	/** tests PDF reading/parsing */
 	private static void testPdfReader(){
-		String pathname = PropertiesUtils.readPdfRootPath() + "test.pdf";
+		String pathname = PropertyUtils.readPdfRootPath() + "test.pdf";
 		try {
 			String text = PdfUtils.pdfToText(pathname);
 			System.out.println(text);

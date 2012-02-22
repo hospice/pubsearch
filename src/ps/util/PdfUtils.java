@@ -18,7 +18,7 @@ public class PdfUtils {
 
 	public static void main(String[] args) {
 		String pubTitle = "pagerank";
-		String pathname = PropertiesUtils.readPdfRootPath() + pubTitle + ".pdf";
+		String pathname = PropertyUtils.readPdfRootPath() + pubTitle + ".pdf";
 		try {
 			String text = PdfUtils.pdfToText(pathname);
 			System.out.println(text);
