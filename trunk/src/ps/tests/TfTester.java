@@ -1,10 +1,9 @@
 package ps.tests;
 
-import ps.stem.snowball.StemUtil;
 import ps.struct.PublicationData;
 import ps.util.PdfUtils;
 import ps.util.PrintUtils;
-import ps.util.PropertiesUtils;
+import ps.util.PropertyUtils;
 import ps.util.TermFrequencyUtils;
 
 public class TfTester {
@@ -34,7 +33,7 @@ public class TfTester {
 		//String pubTitle = "The Anatomy of a Large-Scale Hypertextual Web Search Engine";
 		String pubTitle = "A Survey of Eigenvector Methods for Web Information Retrieval";
 		String query = "web information retrieval";
-		String pathname = PropertiesUtils.readPdfRootPath() + pubTitle + ".pdf";
+		String pathname = PropertyUtils.readPdfRootPath() + pubTitle + ".pdf";
 		String publicationText = PdfUtils.pdfToText(pathname);
 		//System.out.println(publicationText);
 		return new PublicationData(query, pubTitle, publicationText);

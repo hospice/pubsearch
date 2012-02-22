@@ -6,11 +6,36 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import ps.constants.GeneralConstants;
+import ps.constants.PropertyConstants;
+
 /**
  * Provides generic functionality for reading/writing properties.
  */
 public class PropertyUtils {
-
+	
+	public static void main(String[] args) {
+		System.out.println(useProxy());
+	}
+	
+	public static boolean useProxy(){
+		return "true".equals(readProperty(PropertyConstants.USE_PROXY, GeneralConstants.APP_PROPS_LOC));
+	}
+	
+    /**
+     * Reads the PDF root path property value from the respective .properties file.
+     */
+    public static String readPdfRootPath() {
+        return readProperty(PropertyConstants.PDF_ROOT, GeneralConstants.APP_PROPS_LOC);
+    }	
+    
+    /**
+     * Reads the "use stemming" property value from the respective .properties file.
+     */
+    public static boolean useStemming(){
+		return "true".equals(readProperty(PropertyConstants.USE_STEMMING, GeneralConstants.CONFIG_PROPS_LOC));
+    }
+	
     /**
      * Generic method to read specific properties.
      */

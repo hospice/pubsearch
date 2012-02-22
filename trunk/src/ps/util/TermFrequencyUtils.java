@@ -18,7 +18,7 @@ public class TermFrequencyUtils {
 	 */
 	public static double calcTfForPublicationData(PublicationData pd) throws Exception {
 		// stems the 
-		if (PropertiesUtils.useStemming()) {
+		if (PropertyUtils.useStemming()) {
 			String query = StemUtil.getEnglishStem(pd.getTitle());
 			String pubTitle = StemUtil.getEnglishStem(pd.getAbstractText());
 			String publicationText = StemUtil.getEnglishStem(pd.getBody());
