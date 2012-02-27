@@ -2,7 +2,6 @@ package ps.app;
 
 import java.util.List;
 
-import ps.app2.PdfDownloader;
 
 public class TermFrequencyCalculator {
 

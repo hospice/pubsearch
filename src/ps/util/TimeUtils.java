@@ -20,4 +20,25 @@ public class TimeUtils {
 		System.out.println(" done");
 	}
 
+	/**
+	 * Sleeps for the specified number of seconds.
+	 */
+	public static void sleepForSecs(int secs) {
+		try {
+			System.out.print("Waking from sleep in (secs): ");
+			for (int sec = 0; sec < secs; sec++) {
+				System.out.print((secs - sec));
+				Thread.sleep(500);
+				if (sec+1 < secs) {
+					System.out.print(".");
+				}
+				Thread.sleep(500);
+			}
+			System.out.println();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		;
+	}
+
 }

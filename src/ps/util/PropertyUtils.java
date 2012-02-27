@@ -15,12 +15,20 @@ import ps.constants.PropertyConstants;
 public class PropertyUtils {
 	
 	public static void main(String[] args) {
-		System.out.println(useProxy());
+		System.out.println(keepRunning());
 	}
 	
 	public static boolean useProxy(){
 		return "true".equals(readProperty(PropertyConstants.USE_PROXY, GeneralConstants.APP_PROPS_LOC));
 	}
+	
+   /**
+     * Reads the "use stemming" property value from the respective .properties file.
+     */
+    public static boolean keepRunning(){
+		return "true".equals(readProperty(PropertyConstants.KEEP_RUNNING, GeneralConstants.PROCESSOR_PROPS_LOC));
+    }
+	
 	
     /**
      * Reads the PDF root path property value from the respective .properties file.

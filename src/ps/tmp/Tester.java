@@ -20,39 +20,39 @@ public class Tester {
 
 	public static void main(String[] args) throws Exception {
 		// System.out.println("Now performing... processAllQueries():");
-		processAllQueries();
+//		processAllQueries();
 	}
 
-	/**
-	 * PROCESS ALL 5 QUERIES HERE
-	 * 
-	 * @throws Exception
-	 */
-	private static void processAllQueries() throws Exception {
-		List<String> qList = getQueryList();
-		int id = 6000;
-		int queryId = 1124;
-		for (String query : qList) {
-			List<PublicationInfo> mergedList = processForQuery(query);
-			printPublicationInfoSql(id, queryId, mergedList);
-			id++;
-			queryId++;
-		}
-	}
+//	/**
+//	 * PROCESS ALL 5 QUERIES HERE
+//	 * 
+//	 * @throws Exception
+//	 */
+//	private static void processAllQueries() throws Exception {
+//		List<String> qList = getQueryList();
+//		int id = 6000;
+//		int queryId = 1124;
+//		for (String query : qList) {
+//			List<PublicationInfo> mergedList = processForQuery(query);
+//			printPublicationInfoSql(id, queryId, mergedList);
+//			id++;
+//			queryId++;
+//		}
+//	}
 
-	private static List<PublicationInfo> processForQuery(String query) throws Exception {
-		// 1. ARNETMINER:
-		String amHtml = fetchHtmlForQuery(query, SearchEngineEnum.ARNETMINER);
-		List<PublicationInfo> amResults = ArnetMinerExtractor.extractPublicationResults2(amHtml);
-		// 2. GOOGLE SCHOLAR:
-		String gsHtml = fetchHtmlForQuery(query, SearchEngineEnum.GOOGLE_SCHOLAR);
-		List<PublicationInfo> gsResults = GoogleScholarExtractor.extractPublicationResults2(gsHtml);
-		// 3. MISCROSOFT ACADEMIC SEARCH:
-		String msHtml = fetchHtmlForQuery(query, SearchEngineEnum.MISCROSOFT_ACADEMIC_SEARCH);
-		List<PublicationInfo> msResults = MicrosoftAcademicSearchExtractor.extractPublicationResults2(msHtml);
-		List<PublicationInfo> mergedList = mergeList(amResults, gsResults, msResults);
-		return mergedList;
-	}
+//	private static List<PublicationInfo> processForQuery(String query) throws Exception {
+//		// 1. ARNETMINER:
+//		String amHtml = fetchHtmlForQuery(query, SearchEngineEnum.ARNETMINER);
+//		List<PublicationInfo> amResults = ArnetMinerExtractor.extractPublicationResults2(amHtml);
+//		// 2. GOOGLE SCHOLAR:
+//		String gsHtml = fetchHtmlForQuery(query, SearchEngineEnum.GOOGLE_SCHOLAR);
+//		List<PublicationInfo> gsResults = GoogleScholarExtractor.extractPublicationResults2(gsHtml);
+//		// 3. MISCROSOFT ACADEMIC SEARCH:
+//		String msHtml = fetchHtmlForQuery(query, SearchEngineEnum.MISCROSOFT_ACADEMIC_SEARCH);
+//		List<PublicationInfo> msResults = MicrosoftAcademicSearchExtractor.extractPublicationResults2(msHtml);
+//		List<PublicationInfo> mergedList = mergeList(amResults, gsResults, msResults);
+//		return mergedList;
+//	}
 
 	/**
 	 * THE PROCESS FOR EACH QUERY
