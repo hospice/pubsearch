@@ -31,10 +31,10 @@ public class MicrosoftAcademicSearchExtractor {
 	
 	private static List<String> getQueryList() {
 		List<String> qList = new ArrayList<String>();
-		qList.add("\"page rank\" clustering");
-		qList.add("\"social network\" \"information retrieval\"");
-		qList.add("\"unsupervised learning\"");
-		qList.add("clustering \"information retrieval\"");
+//		qList.add("\"page rank\" clustering");
+//		qList.add("\"social network\" \"information retrieval\"");
+//		qList.add("\"unsupervised learning\"");
+//		qList.add("clustering \"information retrieval\"");
 		qList.add("\"web mining\"");
 		return qList;
 	}

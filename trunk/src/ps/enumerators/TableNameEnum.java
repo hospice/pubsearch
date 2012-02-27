@@ -17,6 +17,7 @@ public enum TableNameEnum {
     QUERY_RESULTS,
     QUERY_RESULTS_DEFAULT,
     RESULTS_TF,
-    YEAR_CITATION;
+    YEAR_CITATION,
+	RANK;
     
 }

@@ -32,7 +32,6 @@ public class ArnetMinerExtractor {
 	
 	public static List<PublicationInfo> extractPublicationResults2(String html) throws Exception {
 		List<PublicationInfo> results = new ArrayList<PublicationInfo>();
-		int i = 0;
 		boolean hasMoreRes = true;
 		while (hasMoreRes) {
 			int from = html.indexOf(ExtrConstants.ARN_RES_ITEM);
@@ -62,7 +61,6 @@ public class ArnetMinerExtractor {
 		String pathname = "C:/arnet.html";
 		String html = IOUtils.readFileFromPath(pathname);
 		// **************************
-		int i = 0;
 		boolean hasMoreRes = true;
 		while (hasMoreRes) {
 			int from = html.indexOf(ExtrConstants.ARN_RES_ITEM);
@@ -139,7 +137,7 @@ public class ArnetMinerExtractor {
 			to = html.indexOf(ExtrConstants.MS_RES_END, from);
 			String s = html.substring(from, to);
 			Integer year = Integer.parseInt(s.trim());
-			p = new PublicationInfo(title, "http://www.arnetminer.org/" + url, authors, year);
+			p = new PublicationInfo(title, url, authors, year);
 		}
 		return p;
 	}

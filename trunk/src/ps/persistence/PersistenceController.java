@@ -856,6 +856,20 @@ public class PersistenceController {
 	}
 
 	/**
+	 * Checks if there exists a query with pending status.
+	 */
+	public static boolean pendingQueryExists() throws Exception {
+		Connection connection = ConnectionController.getConnection();
+		String query = "select count(*) from queries where status = 'PENDING';";
+		PreparedStatement ps = connection.prepareStatement(query);
+		ResultSet rs = ps.executeQuery();
+		rs.next();
+		int count = rs.getInt(1);
+		PersistenceUtils.closeRsPs(rs, ps);
+		return count > 0;
+	}
+	
+	/**
 	 * Fetches next query to process.
 	 */
 	public static Query fetchNextQueryToProcess() throws Exception {

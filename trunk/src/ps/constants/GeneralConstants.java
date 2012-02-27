@@ -36,4 +36,5 @@ public class GeneralConstants {
     public final static String QUERIES_FILE_PATH = "queries_file_loc";
     public final static String APP_PROPS_LOC = "./resources/app.properties";
     public final static String CONFIG_PROPS_LOC = "./resources/config.properties";
+    public final static String PROCESSOR_PROPS_LOC = "./resources/processor.properties";
 }

@@ -1,6 +1,6 @@
 package ps.tests;
 
-import ps.app2.PdfExtractor;
+import ps.app.PdfExtractor;
 import ps.util.PdfUtils;
 import ps.util.PropertyUtils;
 

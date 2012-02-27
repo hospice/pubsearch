@@ -15,6 +15,7 @@ import java.util.TreeMap;
 import javax.naming.NamingException;
 
 import ps.enumerators.TableNameEnum;
+import ps.struct.PubInfoSummary;
 
 /**
  * Provides persistence related functionality.
@@ -299,6 +300,26 @@ public class PersistenceController2 {
 			m.put(acronym, descriptionList);
 		}
 		return m;
+	}
+	
+	/**
+	 * Fetches the publication info summary for the specified query results.
+	 */
+	public static List<PubInfoSummary> fetchPubInfoSummaryForQuery(int queryId) throws ClassNotFoundException,
+			SQLException, IOException {
+		List<PubInfoSummary> l = new ArrayList<PubInfoSummary>();
+		Connection connection = ConnectionController.getConnection();
+		String q = "select id, title, authors from query_results";
+		PreparedStatement ps = connection.prepareStatement(q);
+		ResultSet rs = ps.executeQuery();
+		while (rs.next()) {
+			int queryResultId = rs.getInt(1);
+			String title = rs.getString(2);
+			String authors = rs.getString(3);
+			PubInfoSummary p = new PubInfoSummary(queryResultId, title, authors);
+			l.add(p);
+		}
+		return l;
 	}
 
 }

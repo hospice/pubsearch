@@ -28,10 +28,10 @@ public class GoogleScholarExtractor {
 
 	private static List<String> getQueryList() {
 		List<String> qList = new ArrayList<String>();
-		qList.add("\"page rank\" clustering");
-		qList.add("\"social network\" \"information retrieval\"");
-		qList.add("\"unsupervised learning\"");
-		qList.add("clustering \"information retrieval\"");
+//		qList.add("\"page rank\" clustering");
+//		qList.add("\"social network\" \"information retrieval\"");
+//		qList.add("\"unsupervised learning\"");
+//		qList.add("clustering \"information retrieval\"");
 		qList.add("\"web mining\"");
 		return qList;
 	}
@@ -42,11 +42,7 @@ public class GoogleScholarExtractor {
 	public static List<PublicationInfo> extractPublicationResults(String query) throws Exception {
 		List<PublicationInfo> results = new ArrayList<PublicationInfo>();
 
-		// ******* FIXME ***********
-		// String html = CrawlUtils.fetchHtmlCodeForUrl(constructQuery(query));
-		String path = "C:/gs_test5.html";
-		String html = IOUtils.readFileFromPath(path);
-		// **************************
+		 String html = CrawlUtils.fetchHtmlCodeForUrlWithProxy(constructQuery(query));
 
 		int from = html.indexOf(ExtrConstants.GS_RES_SECTION);
 		if (from > -1) {
@@ -74,7 +70,7 @@ public class GoogleScholarExtractor {
 				String url = extractUrlFromContent(section);
 				Integer year = extractYearOfPublicationFromContent(section);
 				Integer citations = extractNumOfCitationsFromContent(section);
-				String resStart = ExtrConstants.GS_RES_TITLE_BEG_PREF + i + ExtrConstants.GS_RES_TITLE_BEG_SUFF;
+				String resStart = ">";
 				int resultStart = section.indexOf(resStart);
 				if (resultStart > -1) {
 					resultStart = resultStart + resStart.length();
@@ -278,11 +274,16 @@ public class GoogleScholarExtractor {
 		String html = null;
 		for (PublicationInfo p : res) {
 			if (p.getTitle().equalsIgnoreCase(title)) {
-				for (String a : p.getAuthors()) {
-					if (a.equalsIgnoreCase(author)) {
-						html = p.getHtml();
-						break;
+				if(author!=null && p.getAuthors()!=null){
+					for (String a : p.getAuthors()) {
+						if (a.equalsIgnoreCase(author)) {
+							html = p.getHtml();
+							break;
+						}
 					}
+				}else{
+					html = p.getHtml();
+					break;
 				}
 			}
 		}

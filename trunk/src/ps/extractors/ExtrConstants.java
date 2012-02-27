@@ -20,7 +20,7 @@ public class ExtrConstants {
 	public final static String ARN_AUTH_START = "<a href=\"expertisesearch.do";
 	public final static String ARN_AUTH_URL_PREF = "viewpub.do?pid=";
 	public final static String ARN_AUTH_SECT_START = "<span>Authors: </span>";
-	public final static String ARN_PUBLISH_YEAR = "<span>Published year:</span>";
+	public final static String ARN_PUBLISH_YEAR = "<span>Published year:</span> ";
 
  	// GOOGLE SCHOLAR
 	public final static String GS_RES_SECTION = "Results <b>";
