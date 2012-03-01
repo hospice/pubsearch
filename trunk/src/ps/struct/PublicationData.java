@@ -23,6 +23,13 @@ public class PublicationData {
 		this.acronymArr = AcronymExtractorUtils.findAcronym(query, title, abstractText, body);
 		this.queryTokens = StringUtils.splitStringIntoTokens(query);
 	}
+	
+	public PublicationData(String[] queryTokens, String pubTitle, String abstractText, String body){
+		this.queryTokens = queryTokens;
+		this.title = pubTitle.toLowerCase();
+		this.abstractText = abstractText.toLowerCase();
+		this.body = body.toLowerCase();
+	}
 
 	public String getTitle() {
 		return title;
