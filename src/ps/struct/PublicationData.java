@@ -20,7 +20,7 @@ public class PublicationData {
 		this.abstractText = pubSections[0];
 		this.body = pubSections[1];
 		this.keywordsArr = TermFrequencyUtils.tokenizeKeywords(pubSections[2]);
-		this.acronymArr = AcronymExtractorUtils.findAcronym(query, title, abstractText, body);
+		//this.acronymArr = AcronymExtractorUtils.findAcronym(query, title, abstractText, body);
 		this.queryTokens = StringUtils.splitStringIntoTokens(query);
 	}
 	

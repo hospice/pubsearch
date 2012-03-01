@@ -13,11 +13,14 @@ import ps.struct.PublicationData;
  */
 public class TermFrequencyUtils {
 
+	// an arbitrary-defined length for the abstract section used to determine whether a selected text string is eligible
+	// length-wise to be the publication's abstract section  
+	private final static int REASONABLE_LENGTH_OF_ABSTRACT = 400;
+	
 	/**
 	 * Calculates the TF score for the entire publication.
 	 */
-	public static double calcTfForPublicationData(PublicationData pd) throws Exception {
-		// stems the 
+	public static double calcTfForPublicationData(PublicationData pd) throws Exception { 
 		if (PropertyUtils.useStemming()) {
 			String query = StemUtil.getEnglishStem(pd.getTitle());
 			String pubTitle = StemUtil.getEnglishStem(pd.getAbstractText());
@@ -95,43 +98,73 @@ public class TermFrequencyUtils {
 	}
 
 	/**
-	 * Extracts the publication's abstract, body and index terms from the full-publication-text. In the returned array,
-	 * the abstract is placed in the first position, and the body in the second.
+	 * Extracts the publication's abstract, body and index terms from the full-publication-text. 
+	 * In the returned array, the abstract is placed in the first position, and the body in the second.
 	 */
 	public static final String[] extractAbstractBodyIndexTerms(String publicationText) throws Exception {
+		// checks if publication text actually exists
 		if (!StringUtils.hasValue(publicationText)) {
 			throw new Exception("No text found...");
 		}
 		String pText = new String(publicationText).toLowerCase();
-
-		// 1a. Extracts the publication's abstract:
-		String abstr = "";
+		
+		// *** ABSTRACT extraction ***
+		String abstractText = "";
 		int from = pText.indexOf(NameConstants.ABSTRACT);
+		// In case the ABSTRACT section is found
 		if (from > -1) {
 			from += NameConstants.ABSTRACT.length();
 			int to = pText.indexOf(NameConstants.INTRODUCTION);
+			// In case the INTRODUCTION section is found
 			if (to > -1) {
-				abstr = pText.substring(from, to);
-				from = to;
+				// CASE 1 : The abstract starts with the explicit mention of the section title "ABSTRACT".
+				if (to > from) {
+					abstractText = pText.substring(from, to);
+					from = to;
+				}
+				// Exceptional case where the term "abstract" identified does not correspond to the section title but an
+				// instance of the term found in the publication body. This exceptional case is handled similarly to
+				// CASE 2 (see below).
+				else {
+					from = 0;
+					abstractText = pText.substring(from, to);
+					if (abstractText.length() > REASONABLE_LENGTH_OF_ABSTRACT) {
+						from = to;
+					}else{
+						abstractText = "";
+					}
+				}
 			}
-		}else{
-			from = 0;
+		} else {
+			// CASE 2 : The abstract does not start with the term for the section title ("ABSTRACT") but contains text
+			// that precedes the section title "INTRODUCTION" and satisfies the "reasonable length of abstract"
+			// constraint
+			int to = pText.indexOf(NameConstants.INTRODUCTION);
+			if (to > -1) {
+				from = 0;
+				abstractText = pText.substring(from, to);
+				if (abstractText.length() > REASONABLE_LENGTH_OF_ABSTRACT) {
+					from = to;
+				}else{
+					abstractText = "";
+				}
+			}
 		}
 		// 1b. Looks for keywords in case they exist, and adjusts abstract text accordingly:
-		int keywordIdx = abstr.indexOf(NameConstants.KEYWORDS);
+		int keywordIdx = abstractText.indexOf(NameConstants.KEYWORDS);
 		String keywords = "";
 		if (keywordIdx > -1) {
-			keywords = abstr.substring(keywordIdx + NameConstants.KEYWORDS.length(), abstr.length());
-			abstr = abstr.substring(0, keywordIdx);
+			keywords = abstractText.substring(keywordIdx + NameConstants.KEYWORDS.length(), abstractText.length());
+			abstractText = abstractText.substring(0, keywordIdx);
 		}
 
-		// 2. Extracts the publication's body:
-		int to = pText.indexOf(NameConstants.REFERENCES);
+		// *** PUBLICATION BODY extraction ***
+		int to = pText.lastIndexOf(NameConstants.REFERENCES);
 		if (to == -1) {
 			to = pText.length();
 		}
 		String body = pText.substring(from, to);
-		return new String[] { abstr, body, keywords };
+		return new String[] { abstractText, body, keywords };
 	}
 
 	/**
