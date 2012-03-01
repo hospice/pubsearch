@@ -1,5 +1,7 @@
 package ps.stem.snowball;
 
+import ps.struct.PublicationData;
+
 /**
  * Stem related functionality.
  */
@@ -27,6 +29,20 @@ public class StemUtil {
 			}
 		}
 		return stemmedText;
+	}
+	
+	/**
+	 * Stems all publication data.
+	 */
+	public static PublicationData stemAllPublicationData(PublicationData orgPd) throws Exception {
+		String[] queryTokens = new String[orgPd.getQueryTokens().length];
+		for (int i = 0; i < orgPd.getQueryTokens().length; i++) {
+			queryTokens[i] = getEnglishStem(orgPd.getQueryTokens()[i]);
+		}
+		String pubTitle = getEnglishStem(orgPd.getTitle());
+		String abstractText = getEnglishStem(orgPd.getAbstractText());
+		String body = getEnglishStem(orgPd.getBody());
+		return new PublicationData(queryTokens, pubTitle, abstractText, body);
 	}
 	
 }
