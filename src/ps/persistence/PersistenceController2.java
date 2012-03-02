@@ -22,24 +22,21 @@ import ps.struct.PubInfoSummary;
  */
 public class PersistenceController2 {
 
-	public static void main(String[] args) throws ClassNotFoundException, SQLException, IOException {
-		// String descr = "information retrieval";
-		// List<String> acrList = findAcronymsForDescr(descr);
-		// for (String acr : acrList) {
-		// System.out.println(acr);
-		// }
-
-		Map<String, List<String>> m = fetchCompleteAcronymsMap();
-//		Iterator<String> it = m.keySet().iterator();
-//		while (it.hasNext()) {
-//			String acronym = it.next();
-//			System.out.println("ACRONYM: " + acronym);
-//			List<String> descriptionList = m.get(acronym);
-//			for (String descr : descriptionList) {
-//				System.out.println(" --> " + descr);
-//			}
-//		}
-		System.out.println("SIZE OF MAP = " + m.size());
+	public static void main(String[] args) {
+		String param = "peer-to-peer";
+		List<String> l;
+		try {
+			l = fetchAcronymsForDescription(param);
+			for(String elem : l){
+				System.out.println(elem);
+			}
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -318,6 +315,40 @@ public class PersistenceController2 {
 			String authors = rs.getString(3);
 			PubInfoSummary p = new PubInfoSummary(queryResultId, title, authors);
 			l.add(p);
+		}
+		return l;
+	}
+	
+	/**
+	 * Fetches the list of descriptions for the specified acronym.
+	 */
+	public static List<String> fetchDescriptionListForAcronym(String acronym)
+			throws ClassNotFoundException, SQLException, IOException {
+		Connection connection = ConnectionController.getConnection();
+		String q = "select description from acronyms where acronym = '"+acronym+"';";
+		PreparedStatement ps = connection.prepareStatement(q);
+		ResultSet rs = ps.executeQuery();
+		List<String> l = new ArrayList<String>();
+		while (rs.next()) {
+			String description = rs.getString(1);
+			l.add(description);
+		}
+		return l;
+	}
+	
+	/**
+	 * Fetches the list of acronyms for the specified description.
+	 */
+	public static List<String> fetchAcronymsForDescription(String description)
+			throws ClassNotFoundException, SQLException, IOException{
+		Connection connection = ConnectionController.getConnection();
+		String q = "select acronym from acronyms where description like '%"+ description.toLowerCase() +"%';";
+		PreparedStatement ps = connection.prepareStatement(q);
+		ResultSet rs = ps.executeQuery();
+		List<String> l = new ArrayList<String>();
+		while (rs.next()) {
+			String acr = rs.getString(1);
+			l.add(acr);
 		}
 		return l;
 	}

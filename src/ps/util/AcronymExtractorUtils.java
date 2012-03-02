@@ -1,288 +1,351 @@
 package ps.util;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.StringTokenizer;
 
 import ps.persistence.PersistenceController2;
+import ps.stem.snowball.StemUtil;
 
 /**
  * Provides a set of utilities for extracting acronyms from text snippet and for construcing the acronyms maps
  */
 public class AcronymExtractorUtils {
 
-	private final static String CONNECTOR = "%";
-	private final static int MIN_OCCURRENCES = 2;
-
 	public static void main(String[] args) {
-		String query = "web information retrieval"; // "peer-to-peer networks";
-		List<String> allTermCombinations = findAllCombinations(query);
 
 	}
+	
+	public static void acronymExtraction2(String query, String text) throws ClassNotFoundException, SQLException, IOException {
+		
+		// extracts all acronyms and their descriptions as defined in the text
+		List<String[]> acronymsList = extractAcronyms(text);
+		
+		// extracts all capitalized tokens and counts their occurrences
+		Map<String, Integer> allCapTokenMap = countNumberOfOccurrences(extractAllCapTokens(text));
+		Map<String, Double> acronymMatchingMap = new HashMap<String, Double>();
 
-	/**
-	 * Constructs and returns the acronym map by reading two differently formatted acronym files. Optionally the map is
-	 * persisted and saved to the specified file.
-	 * 
-	 * @param persistMap
-	 *            , flag that determines if the map should be persisted in database
-	 * @param saveMapToFile
-	 *            , flag that determines if the map should be saved in file
-	 * @param outputFile
-	 *            , the path of the output file in case that we want to save the map in file
-	 * @return the constructed map
-	 * @throws Exception
-	 */
-	public static Map<String, List<String>> constructAcronymsMap(boolean persistMap, boolean saveMapToFile,
-			String outputFile) throws Exception {
-		Map<String, List<String>> acronymsMap = new TreeMap<String, List<String>>();
-		readAcronymsFile1(acronymsMap);
-		readAcronymsFile2(acronymsMap);
-		if (saveMapToFile) {
-			PrintUtils.printAcronymsMap(acronymsMap, outputFile);
-		}
-		if (persistMap) {
-			PersistenceController2.saveAllAcronyms(acronymsMap);
-		}
-		return acronymsMap;
-	}
-
-	/**
-	 * Reads the acronym list according to the format of acronym list 1.
-	 */
-	private static void readAcronymsFile1(Map<String, List<String>> map) throws Exception {
-		String pathName = "C:/_tmp/ACRONYMS_LIST.txt";
-		FileInputStream fis = new FileInputStream(pathName);
-		DataInputStream dis = new DataInputStream(fis);
-		BufferedReader br = new BufferedReader(new InputStreamReader(dis));
-		String line;
-		String acronymPart = "";
-		int lineNum = 1;
-		while ((line = br.readLine()) != null) {
-			line = StringUtils.removeContentBetweenDelimiters(line, "(", ")");
-			line = StringUtils.removeContentBetweenDelimiters(line, "[", "]");
-			String[] lineTokens = line.split("\t");
-			if (lineTokens.length < 2) {
-				throw new Exception("No 2 tokens for line[" + lineNum + "] : " + line);
-			}
-			acronymPart = lineTokens[0];
-			if (acronymPart.length() == 0) {
-				throw new Exception("NULL acronym found at line: " + lineNum);
-			}
-			String descr = StringUtils.escapeChars(lineTokens[1]);
-			List<String> descrList = map.get(acronymPart);
-			if (descrList == null) {
-				descrList = new ArrayList<String>();
-			}
-			addToListIfNew(descrList, descr);
-			map.put(acronymPart, descrList);
-			lineNum++;
-		}
-	}
-
-	/**
-	 * Reads the acronym list according to the format of acronym list 2.
-	 */
-	private static void readAcronymsFile2(Map<String, List<String>> map) throws Exception {
-		FileInputStream fis = new FileInputStream("C:/_tmp/ACRONYMS_LIST_2.txt");
-		DataInputStream dis = new DataInputStream(fis);
-		BufferedReader br = new BufferedReader(new InputStreamReader(dis));
-		String line;
-		String acronymPart = "";
-		int lineNum = 1;
-		while ((line = br.readLine()) != null) {
-			line = StringUtils.removeContentBetweenDelimiters(line, "(", ")");
-			line = StringUtils.removeContentBetweenDelimiters(line, "[", "]");
-			String[] lineTokens = line.split(" ");
-			acronymPart = lineTokens[0];
-			if (acronymPart.length() == 0) {
-				throw new Exception("NULL acronym found at line: " + lineNum);
-			}
-			String descrPart = line.substring(acronymPart.length());
-			String[] descrArr = descrPart.split(CONNECTOR);
-			for (int i = 0; i < descrArr.length; i++) {
-				String descr = StringUtils.escapeChars(descrArr[i].trim());
-				List<String> descrList = map.get(acronymPart);
-				if (descrList == null) {
-					descrList = new ArrayList<String>();
-				}
-				addToListIfNew(descrList, descr);
-				map.put(acronymPart, descrList);
-			}
-			lineNum++;
-		}
-	}
-
-	/**
-	 * Adds the element to the specified list if it not already exists.
-	 */
-	private static void addToListIfNew(List<String> l, String elem) {
-		for (String listElem : l) {
-			if (listElem.equalsIgnoreCase(elem)) {
-				return;
-			}
-		}
-		l.add(elem);
-	}
-
-	public static List<String> findAllAcronymsString(String query, String title, String abstractText, String body)
-			throws ClassNotFoundException, SQLException, IOException {
-		List<String> acronymList = new ArrayList<String>();
-		// i. all possible acronyms based on db data
-		for (String descr : findAllCombinations(query)) {
-			System.out.println("Possible acronyms for description: " + descr);
-			List<String> allAcronyms = PersistenceController2.findAcronymsForDescr(descr);
-			for (String acr : allAcronyms) {
-				acronymList.add(acr);
-			}
-		}
-		// ii. all possible acronyms based on combinations:
-		for (String acr : findAcronym(query, title, abstractText, body)) {
-			acronymList.add(acr);
-		}
-		return acronymList;
-	}
-
-	/**
-	 * Attempts to identify an acronym in the specified title, abstract or body.
-	 */
-	public static String[] findAcronym(String query, String title, String abstractText, String body) {
-		String[] acronymArr = AcronymExtractorUtils.findDefinitionAndAcronym(title, query);
-		if (acronymArr[0] == null) {
-			acronymArr = AcronymExtractorUtils.findDefinitionAndAcronym(abstractText, query);
-		} else if (acronymArr[0] == null) {
-			acronymArr = AcronymExtractorUtils.findDefinitionAndAcronym(body, query);
-		}
-		return acronymArr;
-	}
-
-	/**
-	 * Replaces the acronym with its description in the specified sentence.
-	 */
-	public static String replaceAcronymWithDescr(String sentence, String[] acronymArr) {
-		return sentence.toLowerCase().replaceAll(acronymArr[0], acronymArr[1]);
-	}
-
-	/**
-	 * Identifies the acronym in snippet based on the query terms.
-	 */
-	private static String[] findDefinitionAndAcronym(String snippet, String q) {
-		String s = new String(snippet.toLowerCase());
-		String[] acronymArr = new String[2];
-		if (s.length() > 0) {
-			List<String> allTermCombinations = findAllCombinations(q.toLowerCase());
-			for (String c : allTermCombinations) {
-				String acronym = extractContentInParenth(s, c);
-				if (acronym != null) {
-					acronymArr[0] = acronym;
-					acronymArr[1] = c;
-					return acronymArr;
+		Iterator<String> it = allCapTokenMap.keySet().iterator();
+		while(it.hasNext()){
+			String acronym = it.next();
+			
+			boolean acronymDescrFound = false;
+			
+			// CASE 1: attempts to identify the description from the acronym list extracted from text
+			for(String[] pair : acronymsList){
+				String acr = pair[0];
+				String descr = pair[1];
+				if(acronym.equals(acr)){
+					acronymDescrFound = true;
+					double matchPerc = calcRelevanceOfAcronymWithQuery(descr, query);
+					acronymMatchingMap.put(acr, matchPerc);
+					break;
 				}
 			}
-		}
-		return acronymArr;
-	}
-
-	/**
-	 * Queries the database to fetch all acronyms matching the description that is produced by combining the query
-	 * terms.
-	 */
-	private static List<String> updateAcronymListFromDB(List<String> allTermCombinations) throws Exception {
-		List<String> l = new ArrayList<String>();
-		for (String comb : allTermCombinations) {
-			List<String> acrList = PersistenceController2.findAcronymsForDescr(comb);
-			for (String s : acrList) {
-				if (!StringUtils.containsTerm(l, s)) {
-					l.add(s);
-				}
+			
+			// CASE 2: queries DB to fetch the list of descriptions for the specified query
+			if(!acronymDescrFound){
+				List<String> descrList = PersistenceController2.fetchDescriptionListForAcronym(acronym);
+				
 			}
-		}
-		return l;
-	}
 
-	/**
-	 * Finds all possible acronyms in the provided snippet.
-	 */
-	private static List<String> extractAllCandidateAcronyms(String snippet, List<String> allTermCombinations,
-			List<String> acronymList) throws Exception {
-		List<String> l = new ArrayList<String>();
-		String[] sentences = snippet.split("\\.");
-		for (int i = 0; i < sentences.length; i++) {
-			l.addAll(findAcronyms(sentences[i].trim(), allTermCombinations, acronymList));
+			// Integer occurrences = allCapTokenMap.get(acronym);
+			// calcRelevanceOfAcronymWithQuery(pair[1], query);
+			
+			
+			
 		}
-		return l;
 	}
+	
 
-	/**
-	 * Finds all possible acronyms by examining the list of all query term combinations in the provided sentence.
-	 */
-	private static List<String> findAcronyms(String sentence, List<String> allTermCombinations, List<String> acronymList)
-			throws Exception {
-		List<String> l = new ArrayList<String>();
-		if (sentence.length() > 0) {
-			String copy = new String(sentence);
-			List<String> allUpperTokens = StringUtils.extractAllUpperToken(copy);
-			if (allUpperTokens.size() > 0) {
-				for (String currAllUpperToken : allUpperTokens) {
-					if (!StringUtils.containsTerm(acronymList, currAllUpperToken)) {
-						if (acronymMatch(currAllUpperToken, allTermCombinations)) {
-							l.add(currAllUpperToken);
+//	public static void acronymExtraction() throws ClassNotFoundException, SQLException, IOException {
+//
+//		String query = "web information retrieval";
+//
+//		String text = "This is a test of schwartz's excellent abbreviation tool (SEAT) on a simple example.  ABC is not defined here. \n \r Web Information Retrieval (IR).";
+//
+//		System.out.println("PRINTING RESULTS FOR QUERY = " + query);
+//
+//		// CASE 1 : Acronym defined in text
+//		List<String[]> acronymsList = extractAcronyms(text);
+//		for (String[] pair : acronymsList) {
+//			String acr = pair[0];
+//			String descr = pair[1];
+//			compareAcrDescrWithQuery(descr, query);
+//		}
+//
+//		// CASE 2 : Acronyms used in text
+//		List<String> allCapTokens = extractAllCapTokens(text);
+//		Map<String, Integer> allCapTokenMap = countNumberOfOccurrences(allCapTokens);
+//		
+//
+//		// CASE 3: Acronyms used in query
+//		List<String> acronymsExistingInQuery = findAcronymsFromQuery(query, allCapTokenMap);
+//
+//		// CASE 4: Acronyms identified by examining all combinations of query terms
+//		List<String> allAcronymCandidates = findAcronymsForAllCombinations(query);
+//		List<String> acronymsFromQueryTermCombinations = fetchListOfAppearingAcronyms(allAcronymCandidates, allCapTokenMap);
+//	}
+
+//	/**
+//	 *  Returns a list of all acronyms that appear at least one time.
+//	 */
+//	private static List<String> fetchListOfAppearingAcronyms(List<String> allAcronymCandidates, Map<String, Integer> map){
+//		List<String> l = new ArrayList<String>();
+//		Iterator<String> it = map.keySet().iterator();
+//		while (it.hasNext()) {
+//			String key = it.next();
+//			Integer val = map.get(key);
+//			if (val > 0) {
+//				for(String acr : allAcronymCandidates){
+//					if(acr.equals(key)){
+//						l.add(key);
+//						break;
+//					}
+//				}
+//			}
+//		}
+//		return l;
+//	}
+//	
+//	private static List<String> findAcronymsForAllCombinations(String query) throws ClassNotFoundException,
+//			SQLException, IOException {
+//		List<String> acronyms = new ArrayList<String>();
+//		List<String> combinations = findAllCombinations(query);
+//		for (String c : combinations) {
+//			List<String> l = PersistenceController2.fetchAcronymsForDescription(c);
+//			for (String acr : l) {
+//				if (!acronyms.contains(acr)) {
+//					acronyms.add(c);
+//				}
+//			}
+//		}
+//		return acronyms;
+//	}
+//
+//	private static List<String> findAcronymsFromQuery(String query, Map<String, Integer> allCapTokenMap){
+//		List<String> acronymList = new ArrayList<String>();
+//		List<String> allCapTokensInQuery = extractAllCapTokens(query);
+//		Iterator<String> it = allCapTokenMap.keySet().iterator();
+//		while(it.hasNext()){
+//			String key = it.next();
+//			Integer val = allCapTokenMap.get(key);
+//			if(val>0){
+//				for(String s : allCapTokensInQuery){
+//					if(s.equals(key)){
+//						acronymList.add(s);
+//						break;
+//					}
+//				}
+//			}
+//		}
+//		
+//		return acronymList;
+//	}
+	
+	private static List<String[]> extractAcronyms(String str) {
+		List<String[]> pairsList = new ArrayList<String[]>();
+		String tmpStr = "";
+		String longForm = "";
+		String shortForm = "";
+		int openParenIndex = -1;
+		int closeParenIndex = -1;
+		int sentenceEnd = -1;
+		int newCloseParenIndex = -1;
+		int tmpIndex = -1;
+		StringTokenizer shortTokenizer = null;
+		openParenIndex = str.indexOf("(");
+		do {
+			// checks whether the sentence ends with DOT or COMMA
+			sentenceEnd = Math.max(str.lastIndexOf(". "), str.lastIndexOf(", "));
+			if ((openParenIndex == -1) && (sentenceEnd == -1)) {
+				// do nothing: no opening parenthesis found and sentence does not end
+			} else if (openParenIndex == -1) {
+				// no opening parenthesis found in current sentence, moves to next
+				str = str.substring(sentenceEnd + 2);
+			} else if ((closeParenIndex = str.indexOf(')', openParenIndex)) > -1) {
+				sentenceEnd = Math.max(str.lastIndexOf(". ", openParenIndex), str.lastIndexOf(", ", openParenIndex));
+				if (sentenceEnd == -1) {
+					sentenceEnd = -2;
+				}
+				longForm = str.substring(sentenceEnd + 2, openParenIndex);
+				shortForm = str.substring(openParenIndex + 1, closeParenIndex);
+			}
+			if (shortForm.length() > 0 || longForm.length() > 0) {
+				if (shortForm.length() > 1 && longForm.length() > 1) {
+					if ((shortForm.indexOf('(') > -1)
+							&& ((newCloseParenIndex = str.indexOf(')', closeParenIndex + 1)) > -1)) {
+						shortForm = str.substring(openParenIndex + 1, newCloseParenIndex);
+						closeParenIndex = newCloseParenIndex;
+					}
+					if ((tmpIndex = shortForm.indexOf(", ")) > -1) {
+						shortForm = shortForm.substring(0, tmpIndex);
+					}
+					if ((tmpIndex = shortForm.indexOf("; ")) > -1) {
+						shortForm = shortForm.substring(0, tmpIndex);
+					}
+					shortTokenizer = new StringTokenizer(shortForm);
+					if (shortTokenizer.countTokens() > 2 || shortForm.length() > longForm.length()) {
+						// Long form in ( )
+						tmpIndex = str.lastIndexOf(" ", openParenIndex - 2);
+						tmpStr = str.substring(tmpIndex + 1, openParenIndex - 1);
+						longForm = shortForm;
+						shortForm = tmpStr;
+						if (!hasCapital(shortForm)) {
+							shortForm = "";
+						}
+					}
+					if (isValidShortForm(shortForm)) {
+						String[] pair = extractAbbrPair(shortForm.trim(), longForm.trim());
+						if (pair != null) {
+							pairsList.add(pair);
 						}
 					}
 				}
+				str = str.substring(closeParenIndex + 1);
+			} else if (openParenIndex > -1) {
+				if ((str.length() - openParenIndex) > 200)
+					// Matching close paren was not found
+					str = str.substring(openParenIndex + 1);
+				break; // Read next line
+			}
+			shortForm = "";
+			longForm = "";
+		} while ((openParenIndex = str.indexOf("(")) > -1);
+		return pairsList;
+	}
+
+	private static String findBestLongForm(String shortForm, String longForm) {
+		int sIndex;
+		int lIndex;
+		char currChar;
+
+		sIndex = shortForm.length() - 1;
+		lIndex = longForm.length() - 1;
+		for (; sIndex >= 0; sIndex--) {
+			currChar = Character.toLowerCase(shortForm.charAt(sIndex));
+			if (!Character.isLetterOrDigit(currChar))
+				continue;
+			while (((lIndex >= 0) && (Character.toLowerCase(longForm.charAt(lIndex)) != currChar))
+					|| ((sIndex == 0) && (lIndex > 0) && (Character.isLetterOrDigit(longForm.charAt(lIndex - 1)))))
+				lIndex--;
+			if (lIndex < 0)
+				return null;
+			lIndex--;
+		}
+		lIndex = longForm.lastIndexOf(" ", lIndex) + 1;
+		return longForm.substring(lIndex);
+	}
+
+	private static String[] extractAbbrPair(String shortForm, String longForm) {
+		String bestLongForm;
+		StringTokenizer tokenizer;
+		int longFormSize, shortFormSize;
+		if (shortForm.length() == 1)
+			return null;
+		bestLongForm = findBestLongForm(shortForm, longForm);
+		if (bestLongForm == null)
+			return null;
+		tokenizer = new StringTokenizer(bestLongForm, " \t\n\r\f-");
+		longFormSize = tokenizer.countTokens();
+		shortFormSize = shortForm.length();
+		for (int i = shortFormSize - 1; i >= 0; i--)
+			if (!Character.isLetterOrDigit(shortForm.charAt(i)))
+				shortFormSize--;
+		if (bestLongForm.length() < shortForm.length() || bestLongForm.indexOf(shortForm + " ") > -1
+				|| bestLongForm.endsWith(shortForm) || longFormSize > shortFormSize * 2
+				|| longFormSize > shortFormSize + 5 || shortFormSize > 10) {
+			return null;
+		}
+		String[] pair = new String[2];
+		pair[0] = shortForm;
+		pair[1] = bestLongForm;
+		return pair;
+	}
+
+	private static boolean isValidShortForm(String str) {
+		return (hasLetter(str) && (Character.isLetterOrDigit(str.charAt(0)) || (str.charAt(0) == '(')));
+	}
+
+	private static boolean hasLetter(String str) {
+		for (int i = 0; i < str.length(); i++)
+			if (Character.isLetter(str.charAt(i)))
+				return true;
+		return false;
+	}
+
+	private static boolean hasCapital(String str) {
+		for (int i = 0; i < str.length(); i++)
+			if (Character.isUpperCase(str.charAt(i)))
+				return true;
+		return false;
+	}
+
+	private static List<String> extractAllCapTokens(String str) {
+		List<String> l = new ArrayList<String>();
+		String[] tok = str.split(" ");
+		for (int i = 0; i < tok.length; i++) {
+			String token = stripStringFromNonLettersAndDigits(tok[i]);
+			if (token.length() > 0 && isTokenAllInCaps(token)) {
+				l.add(token);
 			}
 		}
 		return l;
 	}
-
-	/**
-	 * Checks if there exists a match of the acronym with all the query term combinations.
-	 */
-	private static boolean acronymMatch(String acronym, List<String> allTermCombinations) {
-		for (String currCombination : allTermCombinations) {
-			String acronymCandidate = "";
-			String tokens[] = currCombination.split(" ");
-			for (String s : tokens) {
-				acronymCandidate += s.charAt(0);
+	
+	private static Map<String, Integer> countNumberOfOccurrences(List<String> l) {
+		Map<String, Integer> m = new HashMap<String, Integer>();
+		for (String s : l) {
+			Integer val = m.get(s);
+			if (val == null) {
+				val = 0;
 			}
-			if (acronym.equalsIgnoreCase(acronymCandidate)) {
-				return true;
-			}
+			m.put(s, ++val);
 		}
-		return false;
+		return m;
 	}
 
-	/**
-	 * Extracts from the snippet the text in the parenthesis after the occurrence of q.
-	 */
-	private static String extractContentInParenth(String s, String c) {
-		String content = null;
-		int from = s.indexOf(c);
-		if (from > -1) {
-			from = s.indexOf(c) + c.length();
-			if (from < s.length()) {
-				Character ch = s.charAt(from);
-				while (ch == ' ') {
-					from++;
-					ch = s.charAt(from);
-				}
-				if (s.charAt(from) == '(') {
-					int to = s.indexOf(')', from);
-					String tmp = s.substring(from + 1, to);
-					content = tmp.toLowerCase().charAt(0) == c.toLowerCase().charAt(0) ? tmp : null;
+	private static boolean isTokenAllInCaps(String token) {
+		for (int b = 0; b < token.length(); b++)
+			if (!Character.isUpperCase(token.charAt(b))) {
+				return false;
+			}
+		return true;
+	}
+
+	private static String stripStringFromNonLettersAndDigits(String s) {
+		String stripped = "";
+		if (s != null) {
+			s = s.trim();
+			for (int b = 0; b < s.length(); b++) {
+				Character ch = s.charAt(b);
+				if (Character.isLetterOrDigit(ch)) {
+					stripped += ch;
 				}
 			}
 		}
-		return content;
+		return stripped;
+	}
+
+	private static double calcRelevanceOfAcronymWithQuery(String descr, String query) {
+		int matches = 0;
+		String[] descrTokens = descr.split(" ");
+		String[] queryTokens = query.split(" ");
+		for (int a = 0; a < descrTokens.length; a++) {
+			for (int b = 0; b < queryTokens.length; b++) {
+				if (StemUtil.getEnglishStem(descrTokens[a].toLowerCase()).equals(
+						StemUtil.getEnglishStem(queryTokens[b].toLowerCase()))) {
+					matches++;
+				}
+			}
+		}
+		double score = (double) matches / (double) query.split(" ").length;
+		return score;
 	}
 
 	/**
@@ -329,42 +392,6 @@ public class AcronymExtractorUtils {
 			}
 		}
 		return true;
-	}
-
-	/**
-	 * Returns the list of acronyms used in all publications.
-	 */
-	public static List<String> fetchAcronymListUsed(String query, List<String> pubList) throws Exception {
-		List<String> allTermCombinations = findAllCombinations(query);
-		
-		// 1. list is updated by fetching all acronyms whose description matches with the query combinations
-		List<String> acronymList = updateAcronymListFromDB(allTermCombinations);
-
-		// 2. list is updated by fetching all acronyms whose description matches with the query combinations
-		List<String> finalAcronymList = new ArrayList<String>();
-		for (String currPub : pubList) {
-			finalAcronymList.addAll(findAcronymsInText(currPub, allTermCombinations, acronymList));
-		}
-		return finalAcronymList;
-	}
-
-	/**
-	 * Attempts to identify possible acronyms in the specified snippet and calculate their occurrences.
-	 */
-	public static List<String> findAcronymsInText(String text, List<String> allTermCombinations, List<String> acronymList) 
-			throws Exception {
-		// extracts all candidate acronyms (all terms consisted only of upper-cased characters)
-		List<String> allAcronymList = extractAllCandidateAcronyms(text, allTermCombinations, acronymList);
-
-		// contains all acronyms that are encountered more than MIN_OCCURRENCES time in the publications
-		List<String> usedAcronymList = new ArrayList<String>();
-		for (Iterator<String> iter = allAcronymList.iterator(); iter.hasNext();) {
-			String acronym = (String) iter.next();
-			if (StringUtils.countOccur(text, acronym) >= MIN_OCCURRENCES) {
-				usedAcronymList.add(acronym);
-			}
-		}
-		return usedAcronymList;
 	}
 
 }
