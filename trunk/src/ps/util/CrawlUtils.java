@@ -23,7 +23,7 @@ public class CrawlUtils {
 	
 	private final static String PROXY_HOST = "wsa.central.nbg.gr";
 	private final static String PROXY_USER = "bank\\e74269";
-	private final static String PROXY_PASS = "o2lyqmd8+";
+	private final static String PROXY_PASS = "o2lyqmd8!";
 	private final static int PROXY_PORT = 8080;
 
 	public static void main(String[] args) throws ParserException {

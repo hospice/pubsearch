@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,6 +20,7 @@ import ps.comparator.DescKeyComparator;
 import ps.persistence.PersistenceController;
 import ps.persistence.PersistenceController2;
 import ps.struct.PublicationCitation;
+import ps.struct.PublicationInfo;
 import ps.struct.SearchResultWeight;
 
 /**
@@ -26,6 +28,132 @@ import ps.struct.SearchResultWeight;
  */
 public class RankUtils {
 
+	/**
+	 * Ranks the publication info lists based on the term frequency and depreciated citation distribution scores.s
+	 */
+	public static List<PublicationInfo> rankResults(Map<PublicationInfo, Double> citationDepreciationMap,
+			Map<PublicationInfo, Double> termFrequencyMap, double tfBucketSize) {
+
+		// 1. sorts the results based on their TF-value in descending order and groups them based on the TF bucket size
+		TreeMap<PublicationInfo, Double> tfTreeMap = getSortedMapDesc(termFrequencyMap);
+		Map<Integer, List<PublicationInfo>> bucketizedForTfMap = bucketize(tfTreeMap, tfBucketSize);
+
+		// 2. sorts the grouped results based on their DCC-value in descending order
+		Map<Integer, List<PublicationInfo>> bucketizedForTfAndDccMap = furtherBucketize(bucketizedForTfMap,
+				citationDepreciationMap);
+
+		// 3. returns the sorted map as list
+		return convertMapToList(bucketizedForTfAndDccMap);
+	}
+	
+	/**
+	 * Converts the sorted map to a list and returns it
+	 */
+	private static List<PublicationInfo> convertMapToList(Map<Integer, List<PublicationInfo>> m){
+		List<PublicationInfo> rankedList = new ArrayList<PublicationInfo>();
+		Iterator<Integer> iter = m.keySet().iterator();
+		while(iter.hasNext()){
+			Integer bucket = iter.next();
+			List<PublicationInfo> pubList = m.get(bucket);
+			for(PublicationInfo p : pubList){
+				rankedList.add(p);
+			}
+		}
+		return rankedList;
+	}
+	
+	/**
+	 * Sorts the specified map based on the entry values in descending order (from highest to lowest).
+	 */
+	private static TreeMap<PublicationInfo, Double> getSortedMapDesc(Map<PublicationInfo, Double> m) {
+		List<PublicationInfo> sortedList = new ArrayList<PublicationInfo>();
+		ValueComparator bvc = new ValueComparator(m);
+		TreeMap<PublicationInfo, Double> sortedMap = new TreeMap(bvc);
+		sortedMap.putAll(m);
+		return sortedMap;
+	}
+	
+	/**
+	 * Sorts the specified map based on the entry values in descending order (from highest to lowest).
+	 */
+	private static List<PublicationInfo> getSortedListDesc(Map<PublicationInfo, Double> m) {
+		TreeMap<PublicationInfo, Double> sortedMap = getSortedMapDesc(m);
+		List<PublicationInfo> sortedList = new ArrayList<PublicationInfo>();
+		Iterator<PublicationInfo> it = sortedMap.keySet().iterator();
+		while(it.hasNext()){
+			PublicationInfo p = it.next();
+			sortedList.add(p);
+		}
+		return sortedList;
+	}
+	
+	/**
+	 * Groups the specified map into buckets of the specified size.
+	 */
+	private static Map<Integer, List<PublicationInfo>> bucketize(TreeMap<PublicationInfo, Double> m, double bucketSize){
+		Map<Integer, List<PublicationInfo>> bucketsMap = new HashMap<Integer, List<PublicationInfo>>();
+		Iterator<PublicationInfo> it = m.keySet().iterator();
+		while (it.hasNext()) {
+			PublicationInfo pubInfo = it.next();
+			Double value = m.get(pubInfo);
+			int bucket = bucketForValue(value, bucketSize);
+			List<PublicationInfo> l = bucketsMap.get(Integer.valueOf(bucket));
+			if (l == null) {
+				l = new ArrayList<PublicationInfo>();
+			}
+			l.add(pubInfo);
+			bucketsMap.put(bucket, l);
+		}
+		return bucketsMap;
+	}
+	
+	/**
+	 * Groups the specified map by sorting the contents of each of the buckets based on their citation distribution score.
+	 */
+	private static Map<Integer, List<PublicationInfo>> furtherBucketize(Map<Integer, List<PublicationInfo>> m,
+			Map<PublicationInfo, Double> citationDepreciationMap) {
+		Map<Integer, List<PublicationInfo>> map = new HashMap<Integer, List<PublicationInfo>>();
+		Iterator<Integer> it = m.keySet().iterator();
+		while (it.hasNext()) {
+			Integer bucket = it.next();
+			List<PublicationInfo> pubList = m.get(bucket);
+			List<PublicationInfo> sortedPubList = sortListBasedOnMapValues(pubList, citationDepreciationMap);
+			map.put(bucket, sortedPubList);
+		}
+		return map;
+	}
+	
+	/**
+	 * Sorts the list based on the values containined in the specified map.
+	 */
+	private static List<PublicationInfo> sortListBasedOnMapValues(List<PublicationInfo> list, Map<PublicationInfo, Double> map){
+		List<PublicationInfo> sortedList = new ArrayList<PublicationInfo>();
+		Map<PublicationInfo, Double> newMap = new HashMap<PublicationInfo, Double>();
+		for(PublicationInfo p : list){
+			newMap.put(p, map.get(p));
+		}
+		TreeMap<PublicationInfo, Double> sortedMap = getSortedMapDesc(newMap);
+		Iterator<PublicationInfo> it = sortedMap.keySet().iterator();
+		while(it.hasNext()){
+			PublicationInfo pubInfo = it.next();
+			sortedList.add(pubInfo);
+		}
+		return sortedList;
+	}
+	
+	/**
+	 * Returns the bucket "position" that corresponding to the specified value based on the specified bucket size. 
+	 */
+	public static int bucketForValue(double value, double bucketSize) {
+		int bucket = (int) (value / bucketSize);
+		if (bucket == 0) {
+			bucket = 1;
+		} else if (value % bucketSize > 0) {
+			bucket++;
+		}
+		return bucket;
+	}
+	
 	/**
 	 * Fills the provided results list and values map.
 	 */
@@ -639,4 +767,23 @@ public class RankUtils {
 		return df.format(d);
 	}
 	
+}
+
+class ValueComparator implements Comparator {
+
+	Map base;
+	
+	public ValueComparator(Map base) {
+		this.base = base;
+	}
+
+	public int compare(Object a, Object b) {
+		if ((Double) base.get(a) < (Double) base.get(b)) {
+			return 1;
+		} else if ((Double) base.get(a) == (Double) base.get(b)) {
+			return 0;
+		} else {
+			return -1;
+		}
+	}
 }

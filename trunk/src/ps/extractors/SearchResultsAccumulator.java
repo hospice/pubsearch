@@ -41,6 +41,27 @@ public class SearchResultsAccumulator {
 		}
 		return merged;
 	}
+	
+
+	/**
+	 * Merges all distinct results. The method returns a list of <code>maxRes<code> size.
+	 */
+	public static List<PublicationInfo> mergeDistinctResults(int maxRes, List<PublicationInfo>... lists) {
+		List<PublicationInfo> merged = new ArrayList<PublicationInfo>();
+		int count = 0;
+		for (List<PublicationInfo> list : lists) {
+			for (PublicationInfo p : list) {
+				if (!containsPublicationInfo(merged, p)) {
+					merged.add(p);
+					count++;
+					if(count == maxRes){
+						return merged;
+					}
+				}
+			}
+		}
+		return merged;
+	}
 
 	/**
 	 * Checks if the publication is contained in the list.

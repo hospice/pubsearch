@@ -2,99 +2,49 @@ package ps.app;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import javax.naming.NamingException;
-
 import org.htmlparser.util.ParserException;
 
-import com.ibm.icu.util.Calendar;
-
 import ps.constants.AppConstants;
-import ps.persistence.PersistenceController;
-import ps.persistence.PersistenceController2;
 import ps.struct.CitationExtractionOutput;
+import ps.struct.PublicationInfo;
 import ps.util.CrawlUtils;
 import ps.util.TimeUtils;
 
+import com.ibm.icu.util.Calendar;
+
 public class AdvancedCitationExtractor {
 
-	public static void main(String[] args) throws ParserException, MalformedURLException, IOException,
-			ClassNotFoundException, SQLException, NamingException, InterruptedException {
-
-		List<Integer> qList = new ArrayList<Integer>();
-
-//		 // batch 1:
-//		 qList.add(1088);
-//		 qList.add(1089);
-//		 qList.add(1090);
-//		 qList.add(1091);
-//		 qList.add(1092);
-//		 qList.add(1987);
-//		 qList.add(1988);
-//		 qList.add(1089);
-//		 qList.add(1082);
-//		 qList.add(1083);
-
-//		// batch 2:
-//		qList.add(1098);
-//		qList.add(1099);
-//		qList.add(1102);
-//		qList.add(1293);
-//		qList.add(1985);
-//		qList.add(1086);
-//		qList.add(1104);
-//		qList.add(1105);
-//		qList.add(1106);
-//		qList.add(1108);
-
-		extractAndSaveAllCitationForQueryList(qList);
-
-	}
-
-	private static void extractAndSaveAllCitationForQueryList(List<Integer> qList) throws ParserException,
-			ClassNotFoundException, SQLException, IOException, NamingException, InterruptedException {
-		for (Integer queryId : qList) {
-			extractAndSaveAllCitationForQueryId(queryId);
-		}
-	}
-
-	private static void extractAndSaveAllCitationForQueryId(int queryId) throws ClassNotFoundException, SQLException,
-			IOException, ParserException, NamingException, InterruptedException {
-		// fetch all query results for the specific query id
-		List<Integer> qResList = PersistenceController.getAllQueryResultsForQuery(queryId);
-
-		// extract and save all citation information for each query result
-		for (int queryResId : qResList) {
-			String pubTitle = PersistenceController.fetchQueryResultTitleFromId(queryResId);
-			performProcessForPubWithTitle(pubTitle, queryResId);
-		}
-	}
-
-	private static void performProcessForPubWithTitle(String pubTitle, int queryResId) throws ParserException,
-			MalformedURLException, IOException, ClassNotFoundException, SQLException, NamingException,
-			InterruptedException {
-		CitationExtractionOutput c = findNumOfCitationsAndCitedByUrl(pubTitle);
-		if (c.getNumOfCitations() != null && c.getNumOfCitations() > 0) {
-			Map<Integer, Integer> m = processCitationResults(c);
-
-			Iterator<Integer> it = m.keySet().iterator();
-			while (it.hasNext()) {
-				Integer key = it.next();
-				Integer value = m.get(key);
-				System.out.println(key + " : " + value);
+	/**
+	 * Extracts the citation distribution for the specific publication list.
+	 */
+	public static Map<PublicationInfo, Map<Integer, Integer>> extractCitationDistribution(List<PublicationInfo> pList)
+			throws Exception {
+		Map<PublicationInfo, Map<Integer, Integer>> map = new HashMap<PublicationInfo, Map<Integer, Integer>>();
+		for (PublicationInfo p : pList) {
+			Map<Integer, Integer> m = extractCitationDistribution(p);
+			if (m != null) {
+				map.put(p, m);
 			}
-			// persists citation info
-			PersistenceController2.saveYearCitation(queryResId, m);
-		} else {
-			System.out.println("No citations found");
 		}
+		return map;
+	}
+	
+	/**
+	 * Extracts the citation distribution for the specific publication.
+	 */
+	private static Map<Integer, Integer> extractCitationDistribution(PublicationInfo p) throws ParserException,
+			MalformedURLException, IOException, InterruptedException {
+		Map<Integer, Integer> m = null;
+		CitationExtractionOutput c = findNumOfCitationsAndCitedByUrl(p.getTitle());
+		if (c.getNumOfCitations() != null && c.getNumOfCitations() > 0) {
+			m = processCitationResults(c);
+		}
+		return m;
 	}
 
 	/**
