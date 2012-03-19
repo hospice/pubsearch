@@ -16,7 +16,7 @@ import com.ibm.icu.util.StringTokenizer;
  */
 public class RunTest {
 
-	final static String FILE = "C:/tmp/original_rankings.txt";
+	final static String FILE = "C:/_tmp/rankings_acmportal.txt";
 
 	public static void main(String[] args) {
 		// printAllData(readAllRankings(FILE));
