@@ -11,6 +11,7 @@ import java.util.TreeMap;
 import ps.app.TFCalculator;
 import ps.struct.PublicationData;
 import ps.struct.TermFrequencyScore;
+import ps.util.FormatterUtils;
 import ps.util.PdfUtils;
 
 public class TfTester {
@@ -18,76 +19,34 @@ public class TfTester {
 	public static String PDF_HOME = "C:/PDF/";
 
 	public static void main(String[] args) throws Exception {
-//		String pdfName = "Information Retrieval on the Web.pdf";		
-//		testForSpecificPdf(pdfName);
-//		String query = "web information retrieval";
-//		PublicationData pd = readPublicationData(query, pdfName);
-//		System.out.println("\n\n\n\n\n");
-//		System.out.println("*** ABSTRACT ***");
-//		System.out.println("----------------");
-//		System.out.println(pd.getAbstractText());
-//		System.out.println("------------------------------------------------------------------");
-//		System.out.println("\n\n\n\n\n");
-//		System.out.println("*** FULL-TEXT ***");
-//		System.out.println("-----------------");
-//		System.out.println(pd.getBody());
-//		System.out.println("------------------------------------------------------------------");
-//		System.out.println("\n\n\n\n\n");
-//		testSectionExtractionForAllPdfsInPath();
-		
-		TreeMap<Double, String> tfMap = (TreeMap<Double, String>) testForAllPdfsInPath();
-		printTreeMapDescOrder(tfMap);
-		
-	}
-	
-	private static void testForSpecificPdf(String pdfName) throws Exception{
 		String query = "web information retrieval";
-		PublicationData pd = readPublicationData(query, pdfName);
-		calcTfAndPrintResults(pd);
+		TreeMap<Double, String> tfMap = (TreeMap<Double, String>) testForAllPdfsInPath(query);
+		printResultsInDescOrder(tfMap);
+		
 	}
 
-	private static Map<Double, String> testForAllPdfsInPath() throws Exception{
+	/**
+	 * Performs the test for all PDFs in the root (PDF_HOME) folder. 
+	 */
+	private static Map<Double, String> testForAllPdfsInPath(String query) throws Exception {
+		System.out.println("******************************************************************************");
+		System.out.println("                    PROCESSING ALL INDIVIDUAL RESULTS");
+		System.out.println("******************************************************************************");
+		System.out.println();
 		Map<Double, String> tfMap = new TreeMap<Double, String>();
 		List<String> files = readPdfFilesInDir(PDF_HOME);
-		String query = "web information retrieval";
 		int count = 0;
-		for (String f : files) {
-			System.out.println(++count + ". " + f);
+		for (int i = 0; i < files.size(); i++) {
+			String f = files.get(i);
+			System.out.println("[" + ++count + "] FILE NAME: " + f);
 			PublicationData pd = readPublicationData(query, f);
 			double totalTf = calcTfAndPrintResults(pd);
-			System.out.println(" => Total TF score = " + totalTf);
 			tfMap.put(totalTf, pd.getTitle());
-			System.out.println("\n --------------------------- \n");
+			String fmtScore = FormatterUtils.getTwoDecimalDouble(totalTf);
+			System.out.println(" SCORE = " + fmtScore);
+			System.out.println();
 		}
 		return tfMap;
-	}
-	
-	private static void testSectionExtractionForAllPdfsInPath() throws Exception{
-		List<String> files = readPdfFilesInDir(PDF_HOME);
-		String query = "web information retrieval";
-		int count = 0;
-		for (String f : files) {
-			System.out.println(++count + ". " + f);
-			PublicationData pd = readPublicationData(query, f);
-			
-			System.out.println("\n\n\n\n\n");
-			
-			System.out.println("*** ABSTRACT ***");
-			System.out.println("----------------");
-			System.out.println(pd.getAbstractText());
-			System.out.println("------------------------------------------------------------------");
-			
-			System.out.println("\n\n\n\n\n");
-			
-			System.out.println("*** FULL-TEXT ***");
-			System.out.println("-----------------");
-			System.out.println(pd.getBody());
-			System.out.println("------------------------------------------------------------------");
-			
-			System.out.println("\n\n\n\n\n");
-			
-			System.out.println("\n --------------------------- \n");
-		}
 	}
 	
 	/**
@@ -98,8 +57,7 @@ public class TfTester {
 		double titleScore = tfs.getTitle();
 		double abstrScore = tfs.getAbstractText();
 		double bodyScore = tfs.getBody();
-		double totalTf = titleScore + abstrScore + bodyScore;
-		return totalTf;
+		return  titleScore + abstrScore + bodyScore;
 	}
 
 	/**
@@ -134,12 +92,22 @@ public class TfTester {
 		return filenames;
 	}
 	
-	private static void printTreeMapDescOrder(TreeMap<Double, String> treeMap){
+	/**
+	 * Prints the results in descending order. 
+	 */
+	private static void printResultsInDescOrder(TreeMap<Double, String> treeMap){
+		System.out.println("\n\n");
+		System.out.println("******************************************************************************");
+		System.out.println("                               RESULTS");
+		System.out.println("******************************************************************************");
+		System.out.println();
 		Iterator<Double> it = treeMap.descendingKeySet().iterator();
 		while(it.hasNext()){
-			Double key = it.next();
-			String val = treeMap.get(key);
-			System.out.println(key + " has score = " + val);
+			Double score = it.next();
+			String title = treeMap.get(score);
+			String fmtScore = FormatterUtils.getTwoDecimalDouble(score);
+			System.out.println("[" + fmtScore + "] TITLE : " + title);
+			System.out.println();
 		}
 	}
 
